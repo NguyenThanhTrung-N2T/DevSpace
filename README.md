@@ -60,6 +60,13 @@ devspace/
    - Next.js Web: [http://localhost](http://localhost)
    - Auth Service Health Check: [http://localhost/api/auth/health](http://localhost/api/auth/health)
 
+## ⚠️ Security Notes
+
+- **Never commit `.env` files** — they contain sensitive credentials and are ignored by `.gitignore`.
+- **Use strong keys & credentials** in production environments.
+- **Enable HTTPS/SSL** at the Nginx edge or proxy layer before public deployment.
+- **Rotate JWT Keys** regularly to prevent compromise.
+
 ---
 
 ## Documentation Index

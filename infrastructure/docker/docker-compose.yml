@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
     environment:
       ConnectionStrings__Default: ${DATABASE_URL}
-      Jwt__PrivateKeyPath: /run/secrets/jwt_private_key
+      Jwt__PrivateKey: ${JWT_PRIVATE_KEY}
     ports:
       - "5001:8080"
     networks: [devspace-net]

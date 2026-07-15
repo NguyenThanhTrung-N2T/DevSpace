@@ -110,3 +110,7 @@ Thumbs.db
 
 # Docker
 postgres_data/
+
+# Specific environment files
+infrastructure/docker/.env
+

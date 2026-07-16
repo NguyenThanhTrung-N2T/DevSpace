@@ -27,8 +27,42 @@ try
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
+    // CORS configuration using Options Pattern
+    builder.Services.AddCors(options =>
+    {
+        options.AddDefaultPolicy(policy =>
+        {
+            var corsOrigins = builder.Configuration.GetSection(Auth.Application.Common.Options.CorsOptions.SectionName)
+                .Get<Auth.Application.Common.Options.CorsOptions>();
+            
+            if (corsOrigins?.AllowedOrigins != null && corsOrigins.AllowedOrigins.Length > 0)
+            {
+                policy.WithOrigins(corsOrigins.AllowedOrigins)
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+            }
+            else
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            }
+        });
+    });
+
     // Add Controllers & Routing
     builder.Services.AddControllers();
+
+    // Configure Authorization Policies
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy("RequireAdmin", policy =>
+            policy.RequireRole("Admin"));
+
+        options.AddPolicy("RequireVerifiedEmail", policy =>
+            policy.RequireClaim("email_verified", "true"));
+    });
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
     {
@@ -70,7 +104,50 @@ try
     builder.Services.AddHealthChecks()
         .AddDbContextCheck<AuthDbContext>("Database_Ready");
 
+    // Register Global Exception Handler
+    builder.Services.AddExceptionHandler<Auth.Api.Middleware.GlobalExceptionHandler>();
+    builder.Services.AddProblemDetails();
+
+    // Register Rate Limiting
+    builder.Services.Configure<Auth.Application.Common.Options.RateLimitOptions>(builder.Configuration.GetSection(Auth.Application.Common.Options.RateLimitOptions.SectionName));
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        options.AddPolicy("login", context =>
+        {
+            var rateLimitOptions = context.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<Auth.Application.Common.Options.RateLimitOptions>>().Value;
+            var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+            return System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(ipAddress, _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitOptions.LoginPermitLimit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = rateLimitOptions.LoginQueueLimit
+            });
+        });
+
+        options.AddPolicy("register", context =>
+        {
+            var rateLimitOptions = context.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<Auth.Application.Common.Options.RateLimitOptions>>().Value;
+            var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+            return System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(ipAddress, _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitOptions.RegisterPermitLimit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = rateLimitOptions.RegisterQueueLimit
+            });
+        });
+    });
+
     var app = builder.Build();
+
+    // Global Exception Handling (RFC-7807)
+    app.UseExceptionHandler();
+
+    // Seed/migrate database automatically on startup
+    await AuthDbContextSeeder.SeedAsync(app.Services);
 
     // Use Serilog request logging
     app.UseSerilogRequestLogging(options =>
@@ -99,10 +176,22 @@ try
 
     app.UseRouting();
 
-    // CORS & Authentication/Authorization will be configured in subsequent Milestones
+    app.UseCors();
+
+    app.UseRateLimiter();
+
+    // CORS & Authentication/Authorization
+    app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();
+
+    // Map JWKS Discovery Endpoint
+    app.MapGet("/.well-known/jwks.json", (Auth.Application.Common.Interfaces.IJwtService jwtService) =>
+    {
+        var jwks = jwtService.GetJwksJson();
+        return Results.Content(jwks, "application/json");
+    });
 
     // Map Health Check Endpoints
     app.MapHealthChecks("/health/live", new HealthCheckOptions

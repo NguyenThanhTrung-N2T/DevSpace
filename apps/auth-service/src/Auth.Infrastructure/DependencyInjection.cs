@@ -1,8 +1,10 @@
 using Auth.Application.Common.Interfaces;
 using Auth.Application.Common.Options;
 using Auth.Domain.Entities;
+using Auth.Infrastructure.Auth;
 using Auth.Infrastructure.Persistence;
 using Auth.Infrastructure.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,12 +20,23 @@ public static class DependencyInjection
         // Bind Options from Configuration
         services.Configure<DatabaseOptions>(configuration.GetSection(DatabaseOptions.SectionName));
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
 
         // Register Data Protection (required for default token providers)
         services.AddDataProtection();
 
         // Configure Identity Options using Options Pattern
         services.ConfigureOptions<ConfigureIdentityOptions>();
+
+        // Register Authentication & Configure JWT validation options
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer();
+
+        services.ConfigureOptions<ConfigureJwtBearerOptions>();
 
         // Register EF Core DbContext targeting PostgreSQL
         services.AddDbContext<AuthDbContext>((sp, options) =>
@@ -42,6 +55,9 @@ public static class DependencyInjection
             .AddRoles<Role>()
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddDefaultTokenProviders();
+
+        // Register JWT Service (Singleton since keys are loaded/cached in memory)
+        services.AddSingleton<IJwtService, JwtService>();
 
         // Register Mock Email Service
         services.AddTransient<IEmailSender, MockEmailSender>();

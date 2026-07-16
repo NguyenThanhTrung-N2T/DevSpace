@@ -30,6 +30,8 @@ services:
     environment:
       ConnectionStrings__Default: ${DATABASE_URL}
       Jwt__PrivateKey: ${JWT_PRIVATE_KEY}
+      Jwt__PublicKey: ${JWT_PUBLIC_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS}
     ports:
       - "5001:8080"
     networks: [devspace-net]

@@ -35,9 +35,16 @@ try
             var corsOrigins = builder.Configuration.GetSection(Auth.Application.Common.Options.CorsOptions.SectionName)
                 .Get<Auth.Application.Common.Options.CorsOptions>();
             
-            if (corsOrigins?.AllowedOrigins != null && corsOrigins.AllowedOrigins.Length > 0)
+            var origins = corsOrigins?.AllowedOrigins;
+            var envOrigins = builder.Configuration["CORS_ORIGINS"];
+            if ((origins == null || origins.Length == 0) && !string.IsNullOrEmpty(envOrigins))
             {
-                policy.WithOrigins(corsOrigins.AllowedOrigins)
+                origins = envOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            }
+
+            if (origins != null && origins.Length > 0)
+            {
+                policy.WithOrigins(origins)
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials();

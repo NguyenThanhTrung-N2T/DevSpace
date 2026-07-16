@@ -20,10 +20,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore apps/auth-service/auth-service.csproj
+        run: dotnet restore apps/auth-service/Auth.slnx
 
       - name: Build Web API
-        run: dotnet build apps/auth-service/auth-service.csproj --configuration Release --no-restore
+        run: dotnet build apps/auth-service/Auth.slnx --configuration Release --no-restore
+
+      - name: Run Unit Tests
+        run: dotnet test apps/auth-service/Auth.slnx --configuration Release --no-build
 
   build-web-app:
     name: Build Web App (Next.js)

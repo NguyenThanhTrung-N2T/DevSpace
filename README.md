@@ -42,7 +42,7 @@ devspace/
 
 ### Prerequisites
 - [Docker & Docker Compose](https://www.docker.com/)
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/)
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/)
 - [Node.js v22+](https://nodejs.org/)
 
 ### Spin up the environment

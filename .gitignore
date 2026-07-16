@@ -101,6 +101,12 @@ Thumbs.db
 *.userosscache
 *.sln.docstates
 
+# .NET Test Coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
 # IDEs
 .idea/
 *.suo

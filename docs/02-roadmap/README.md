@@ -6,19 +6,26 @@ This roadmap tracks the development of DevSpace. Because we practice **Evolution
 
 ## Phase Checklist
 
-### [ ] Bootstrap (Current Phase)
+### [✅] Bootstrap
 - **Goal**: Setup monorepo structure, minimal Docker Compose, build pipelines (CI), and root skeletons.
+- **Status**: ✅ **COMPLETED** (v0.0-bootstrap - July 2026)
 - **Exit Criteria**:
-  - `docker compose up` runs successfully with Next.js web skeleton, ASP.NET auth stub, and PostgreSQL.
-  - CI (GitHub Actions) passes lint/build checks on Pull Request.
-  - Initial codebase is committed and tagged `v0.0-bootstrap`.
+  - ✅ `docker compose up` runs successfully with Next.js web skeleton, ASP.NET auth stub, and Neon PostgreSQL.
+  - ✅ CI (GitHub Actions) passes lint/build checks on Pull Request.
+  - ✅ Initial codebase is committed and tagged `v0.0-bootstrap`.
 
-### [ ] Phase 1 — ASP.NET Auth Service
-- **Goal**: Complete Auth Service in ASP.NET Core: Register, Login, JWT verification, Refresh Tokens, Google OAuth, Forgot Password.
+### [✅] Phase 1 — ASP.NET Auth Service (Current Phase)
+- **Goal**: Complete Auth Service in ASP.NET Core: Register, Login, JWT verification, Refresh Tokens, Forgot Password, Email Verification.
+- **Status**: ✅ **COMPLETED** (v0.1.0 - July 16, 2026)
 - **Exit Criteria**:
-  - Auth Service is fully functional and deployed on VPS.
-  - Secure JWT validation (RS256 asymmetric keys via JWKS endpoint).
-  - Production-grade tests are added.
+  - ✅ Auth Service is fully functional with Clean Architecture.
+  - ✅ Secure JWT validation (RS256 asymmetric keys via JWKS endpoint).
+  - ✅ Production-grade tests are added (16/16 tests pass).
+  - ✅ Refresh Token Family Rotation with reuse detection.
+  - ✅ Rate limiting and soft delete implemented.
+  - ✅ Scalar API documentation.
+  - ⏭️ Deployment to VPS (pending).
+- **Notes**: Google OAuth deferred to later phase based on Evidence First principle.
 
 ### [ ] Phase 2 — Core Service
 - **Goal**: Introduce Spring Boot Core Service to manage workspaces, projects, tasks, wikis, and comments.

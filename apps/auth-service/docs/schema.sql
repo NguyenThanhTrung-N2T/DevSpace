@@ -1,17 +1,10 @@
-﻿CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+CREATE SCHEMA IF NOT EXISTS auth;
+
+CREATE TABLE IF NOT EXISTS auth."__EFMigrationsHistory" (
     "MigrationId" character varying(150) NOT NULL,
     "ProductVersion" character varying(32) NOT NULL,
     CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
 );
-
-START TRANSACTION;
-
-DO $EF$
-BEGIN
-    IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'auth') THEN
-        CREATE SCHEMA auth;
-    END IF;
-END $EF$;
 
 CREATE TABLE auth.roles (
     "Id" uuid NOT NULL,
@@ -152,8 +145,6 @@ CREATE INDEX "IX_users_IsActive" ON auth.users ("IsActive");
 
 CREATE UNIQUE INDEX "UserNameIndex" ON auth.users ("NormalizedUserName");
 
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260717153236_InitialCreate', '8.0.0');
-
-COMMIT;
+INSERT INTO auth."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260717154208_InitialCreate', '8.0.0');
 

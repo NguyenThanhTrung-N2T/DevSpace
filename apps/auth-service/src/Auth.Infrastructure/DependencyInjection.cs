@@ -45,6 +45,7 @@ public static class DependencyInjection
             options.UseNpgsql(dbOptions.Default, builder =>
             {
                 builder.MigrationsAssembly(typeof(AuthDbContext).Assembly.FullName);
+                builder.MigrationsHistoryTable("__EFMigrationsHistory", "auth");
             });
         });
 

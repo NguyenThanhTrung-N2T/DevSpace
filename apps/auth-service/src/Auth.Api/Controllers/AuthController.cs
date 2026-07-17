@@ -209,6 +209,7 @@ public class AuthController : ControllerBase
         // Revoke the used token
         storedToken.IsRevoked = true;
         storedToken.RevokedAt = DateTime.UtcNow;
+        storedToken.UsedAt = DateTime.UtcNow;
         storedToken.Reason = "Replaced by token rotation";
 
         // Generate new tokens
@@ -264,13 +265,13 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> RevokeAll()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (string.IsNullOrEmpty(userId))
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
         {
             return Unauthorized();
         }
 
         var activeTokens = await _dbContext.RefreshTokens
-            .Where(t => t.UserId == userId && !t.IsRevoked && t.RevokedAt == null)
+            .Where(t => t.UserId == userGuid && !t.IsRevoked && t.RevokedAt == null)
             .ToListAsync();
 
         foreach (var token in activeTokens)
@@ -292,6 +293,11 @@ public class AuthController : ControllerBase
             return BadRequest(new { Message = "User ID and Token are required." });
         }
 
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            return BadRequest(new { Message = "Invalid user ID format." });
+        }
+
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
         {
@@ -304,14 +310,10 @@ public class AuthController : ControllerBase
             return BadRequest(new { Errors = result.Errors.Select(e => e.Description) });
         }
 
-        // Sync local flag
-        user.EmailVerified = true;
-        await _userManager.UpdateAsync(user);
-
         // Complete stored verification token status
         var hashedToken = HashToken(token);
         var dbToken = await _dbContext.UserVerificationTokens
-            .FirstOrDefaultAsync(t => t.UserId == userId && t.TokenHash == hashedToken && t.Type == UserVerificationTokenType.EmailVerification);
+            .FirstOrDefaultAsync(t => t.UserId == userGuid && t.TokenHash == hashedToken && t.Type == UserVerificationTokenType.EmailVerification);
 
         if (dbToken != null)
         {
@@ -422,7 +424,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { Errors = validationResult.Errors.Select(e => e.ErrorMessage) });
         }
 
-        var user = await _userManager.FindByIdAsync(request.UserId);
+        var user = await _userManager.FindByIdAsync(request.UserId.ToString());
         if (user == null || !user.IsActive || user.DeletedAt != null)
         {
             return BadRequest(new { Message = "Invalid user or request." });

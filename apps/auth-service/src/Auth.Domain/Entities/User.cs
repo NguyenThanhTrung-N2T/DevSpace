@@ -2,11 +2,10 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Auth.Domain.Entities;
 
-public class User : IdentityUser
+public class User : IdentityUser<Guid>
 {
     public string DisplayName { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
-    public bool EmailVerified { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

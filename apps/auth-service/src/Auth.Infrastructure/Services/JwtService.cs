@@ -54,7 +54,7 @@ public class JwtService : IJwtService
 
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             new Claim(JwtRegisteredClaimNames.Jti, tokenId),
             new Claim("display_name", user.DisplayName),
@@ -90,7 +90,7 @@ public class JwtService : IJwtService
         return (tokenString, tokenId, expiresAt);
     }
 
-    public (string Token, Guid TokenId, Guid FamilyId) GenerateRefreshToken(string userId, Guid? familyId = null)
+    public (string Token, Guid TokenId, Guid FamilyId) GenerateRefreshToken(Guid userId, Guid? familyId = null)
     {
         var tokenId = Guid.NewGuid();
         var actualFamilyId = familyId ?? Guid.NewGuid();

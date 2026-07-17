@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace Auth.Application.Common.Models;
 
-public record ResetPasswordRequest(string UserId, string Token, string NewPassword);
+public record ResetPasswordRequest(Guid UserId, string Token, string NewPassword);
 
 public class ResetPasswordRequestValidator : AbstractValidator<ResetPasswordRequest>
 {

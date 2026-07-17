@@ -38,7 +38,7 @@ public class AuthIntegrationTests : IDisposable
 
         var user = new User
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             UserName = "test@devspace.com",
             Email = "test@devspace.com",
             DisplayName = "Test User",
@@ -74,7 +74,7 @@ public class AuthIntegrationTests : IDisposable
 
         var user = new User
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             UserName = "rotation@devspace.com",
             Email = "rotation@devspace.com",
             DisplayName = "Rotation User",
@@ -101,6 +101,7 @@ public class AuthIntegrationTests : IDisposable
         // 2. Perform rotation: rotate Token 1 -> Token 2 (marks Token 1 as used/revoked)
         token1.IsRevoked = true;
         token1.RevokedAt = DateTime.UtcNow;
+        token1.UsedAt = DateTime.UtcNow;
         token1.Reason = "Replaced by rotation";
 
         var token2 = new RefreshToken
@@ -115,6 +116,12 @@ public class AuthIntegrationTests : IDisposable
         context.RefreshTokens.Add(token2);
         token1.ReplacedByTokenId = token2.Id;
         await context.SaveChangesAsync();
+
+        // Verify UsedAt is saved
+        var updatedToken1 = await context.RefreshTokens.FindAsync(token1.Id);
+        Assert.NotNull(updatedToken1);
+        Assert.NotNull(updatedToken1.UsedAt);
+        Assert.Equal(token2.Id, updatedToken1.ReplacedByTokenId);
 
         // 3. Simulate Reuse Detection: client attempts to reuse Token 1 again
         var reuseAttemptToken = await context.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == "hash1");
@@ -139,5 +146,48 @@ public class AuthIntegrationTests : IDisposable
         Assert.NotNull(updatedToken2);
         Assert.True(updatedToken2.IsRevoked);
         Assert.Equal("Revoked due to reuse detection", updatedToken2.Reason);
+    }
+
+    [Fact]
+    public async Task Should_Fail_When_RefreshToken_TokenHash_Is_Duplicate()
+    {
+        using var context = new AuthDbContext(_contextOptions);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            UserName = "duplicate@devspace.com",
+            Email = "duplicate@devspace.com",
+            DisplayName = "Duplicate User",
+            IsActive = true
+        };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var token1 = new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            FamilyId = Guid.NewGuid(),
+            TokenHash = "duplicate_hash",
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            IsRevoked = false
+        };
+
+        var token2 = new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            FamilyId = Guid.NewGuid(),
+            TokenHash = "duplicate_hash", // Same hash
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            IsRevoked = false
+        };
+
+        context.RefreshTokens.Add(token1);
+        context.RefreshTokens.Add(token2);
+
+        // Should throw unique constraint validation error (DbUpdateException)
+        await Assert.ThrowsAsync<DbUpdateException>(async () => await context.SaveChangesAsync());
     }
 }

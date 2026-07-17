@@ -40,7 +40,7 @@ public class JwtServiceTests
         var service = new JwtService(_jwtOptions, NullLogger<JwtService>.Instance);
         var user = new User
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             Email = "test@devspace.com",
             DisplayName = "Test User"
         };
@@ -65,7 +65,7 @@ public class JwtServiceTests
     public void Should_Generate_Unique_RefreshToken()
     {
         var service = new JwtService(_jwtOptions, NullLogger<JwtService>.Instance);
-        var userId = Guid.NewGuid().ToString();
+        var userId = Guid.NewGuid();
 
         var (token1, id1, familyId1) = service.GenerateRefreshToken(userId);
         var (token2, id2, familyId2) = service.GenerateRefreshToken(userId);

@@ -20,7 +20,7 @@ namespace Auth.Infrastructure.Migrations
                 schema: "auth",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "text", nullable: true)
@@ -35,10 +35,9 @@ namespace Auth.Infrastructure.Migrations
                 schema: "auth",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     DisplayName = table.Column<string>(type: "text", nullable: false),
                     AvatarUrl = table.Column<string>(type: "text", nullable: true),
-                    EmailVerified = table.Column<bool>(type: "boolean", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -71,7 +70,7 @@ namespace Auth.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    RoleId = table.Column<string>(type: "text", nullable: false),
+                    RoleId = table.Column<Guid>(type: "uuid", nullable: false),
                     ClaimType = table.Column<string>(type: "text", nullable: true),
                     ClaimValue = table.Column<string>(type: "text", nullable: true)
                 },
@@ -92,7 +91,7 @@ namespace Auth.Infrastructure.Migrations
                 schema: "auth",
                 columns: table => new
                 {
-                    UserId = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     LoginProvider = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Value = table.Column<string>(type: "text", nullable: true)
@@ -115,11 +114,12 @@ namespace Auth.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     FamilyId = table.Column<Guid>(type: "uuid", nullable: false),
                     TokenHash = table.Column<string>(type: "text", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RevokedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ReplacedByTokenId = table.Column<Guid>(type: "uuid", nullable: true),
                     IsRevoked = table.Column<bool>(type: "boolean", nullable: false),
@@ -130,6 +130,13 @@ namespace Auth.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_refresh_tokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_refresh_tokens_refresh_tokens_ReplacedByTokenId",
+                        column: x => x.ReplacedByTokenId,
+                        principalSchema: "auth",
+                        principalTable: "refresh_tokens",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_refresh_tokens_users_UserId",
                         column: x => x.UserId,
@@ -146,7 +153,7 @@ namespace Auth.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ClaimType = table.Column<string>(type: "text", nullable: true),
                     ClaimValue = table.Column<string>(type: "text", nullable: true)
                 },
@@ -170,7 +177,7 @@ namespace Auth.Infrastructure.Migrations
                     LoginProvider = table.Column<string>(type: "text", nullable: false),
                     ProviderKey = table.Column<string>(type: "text", nullable: false),
                     ProviderDisplayName = table.Column<string>(type: "text", nullable: true),
-                    UserId = table.Column<string>(type: "text", nullable: false)
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -189,8 +196,8 @@ namespace Auth.Infrastructure.Migrations
                 schema: "auth",
                 columns: table => new
                 {
-                    UserId = table.Column<string>(type: "text", nullable: false),
-                    RoleId = table.Column<string>(type: "text", nullable: false)
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RoleId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -217,7 +224,7 @@ namespace Auth.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Type = table.Column<int>(type: "integer", nullable: false),
                     TokenHash = table.Column<string>(type: "text", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -235,6 +242,25 @@ namespace Auth.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_refresh_tokens_FamilyId",
+                schema: "auth",
+                table: "refresh_tokens",
+                column: "FamilyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_refresh_tokens_ReplacedByTokenId",
+                schema: "auth",
+                table: "refresh_tokens",
+                column: "ReplacedByTokenId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_refresh_tokens_TokenHash",
+                schema: "auth",
+                table: "refresh_tokens",
+                column: "TokenHash",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_refresh_tokens_UserId",
@@ -274,16 +300,35 @@ namespace Auth.Infrastructure.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_user_tokens_UserId",
+                name: "IX_user_tokens_TokenHash",
                 schema: "auth",
                 table: "user_tokens",
-                column: "UserId");
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_user_tokens_UserId_Type",
+                schema: "auth",
+                table: "user_tokens",
+                columns: new[] { "UserId", "Type" });
 
             migrationBuilder.CreateIndex(
                 name: "EmailIndex",
                 schema: "auth",
                 table: "users",
                 column: "NormalizedEmail");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_users_DeletedAt",
+                schema: "auth",
+                table: "users",
+                column: "DeletedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_users_IsActive",
+                schema: "auth",
+                table: "users",
+                column: "IsActive");
 
             migrationBuilder.CreateIndex(
                 name: "UserNameIndex",

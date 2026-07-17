@@ -42,7 +42,6 @@ public static class AuthDbContextSeeder
                     Email = adminEmail,
                     DisplayName = "Administrator",
                     EmailConfirmed = true,
-                    EmailVerified = true,
                     IsActive = true
                 };
 

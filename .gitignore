@@ -100,6 +100,7 @@ Thumbs.db
 *.user
 *.userosscache
 *.sln.docstates
+appsettings.Development.json
 
 # .NET Test Coverage
 TestResults/

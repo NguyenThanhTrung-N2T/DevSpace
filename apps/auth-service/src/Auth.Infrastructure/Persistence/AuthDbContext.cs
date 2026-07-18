@@ -71,6 +71,9 @@ public class AuthDbContext : IdentityDbContext<User, Role, Guid>, IAuthDbContext
             entity.HasKey(rt => rt.Id);
             entity.Property(rt => rt.TokenHash).IsRequired();
 
+            // Match global query filter with parent User soft delete
+            entity.HasQueryFilter(rt => rt.User.DeletedAt == null);
+
             // Setup indexing and uniqueness
             entity.HasIndex(rt => rt.TokenHash).IsUnique();
             entity.HasIndex(rt => rt.FamilyId);
@@ -93,6 +96,9 @@ public class AuthDbContext : IdentityDbContext<User, Role, Guid>, IAuthDbContext
             entity.ToTable("user_tokens");
             entity.HasKey(ut => ut.Id);
             entity.Property(ut => ut.TokenHash).IsRequired();
+
+            // Match global query filter with parent User soft delete
+            entity.HasQueryFilter(ut => ut.User.DeletedAt == null);
 
             // Setup indexing
             entity.HasIndex(ut => ut.TokenHash).IsUnique();

@@ -109,6 +109,7 @@ coverage/
 
 # IDEs
 .idea/
+.vs/
 *.suo
 *.user
 *.userosscache

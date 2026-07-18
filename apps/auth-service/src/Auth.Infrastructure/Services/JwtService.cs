@@ -1,4 +1,5 @@
 using Auth.Application.Common.Interfaces;
+using Auth.Application.Common.Models;
 using Auth.Application.Common.Options;
 using Auth.Domain.Entities;
 using Microsoft.Extensions.Logging;
@@ -47,7 +48,7 @@ public class JwtService : IJwtService
         }
     }
 
-    public (string Token, string TokenId, DateTime ExpiresAt) GenerateAccessToken(User user, IList<string> roles)
+    public AccessTokenResult GenerateAccessToken(UserInfo user)
     {
         var tokenId = Guid.NewGuid().ToString();
         var expiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.ExpiryMinutes);
@@ -55,18 +56,13 @@ public class JwtService : IJwtService
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Jti, tokenId),
             new Claim("display_name", user.DisplayName),
             new Claim("email_verified", user.EmailConfirmed ? "true" : "false")
         };
 
-        if (!string.IsNullOrEmpty(user.AvatarUrl))
-        {
-            claims.Add(new Claim("avatar_url", user.AvatarUrl));
-        }
-
-        foreach (var role in roles)
+        foreach (var role in user.Roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
@@ -87,26 +83,7 @@ public class JwtService : IJwtService
         var securityToken = tokenHandler.CreateToken(tokenDescriptor);
         var tokenString = tokenHandler.WriteToken(securityToken);
 
-        return (tokenString, tokenId, expiresAt);
-    }
-
-    public (string Token, Guid TokenId, Guid FamilyId) GenerateRefreshToken(Guid userId, Guid? familyId = null)
-    {
-        var tokenId = Guid.NewGuid();
-        var actualFamilyId = familyId ?? Guid.NewGuid();
-
-        // Create a secure cryptographically random token string
-        var randomBytes = new byte[32];
-        using (var rng = RandomNumberGenerator.Create())
-        {
-            rng.GetBytes(randomBytes);
-        }
-        var tokenString = Convert.ToBase64String(randomBytes)
-            .Replace("+", "-")
-            .Replace("/", "_")
-            .Replace("=", "");
-
-        return (tokenString, tokenId, actualFamilyId);
+        return new AccessTokenResult(tokenString, expiresAt);
     }
 
     public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)

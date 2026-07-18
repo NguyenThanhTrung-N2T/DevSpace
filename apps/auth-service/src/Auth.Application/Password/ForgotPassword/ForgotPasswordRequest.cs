@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Auth.Application.Common.Models;
+namespace Auth.Application.Password.ForgotPassword;
 
 public record ForgotPasswordRequest(string Email);
 

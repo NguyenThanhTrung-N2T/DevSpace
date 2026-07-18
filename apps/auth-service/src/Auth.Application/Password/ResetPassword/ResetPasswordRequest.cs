@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Auth.Application.Common.Models;
+namespace Auth.Application.Password.ResetPassword;
 
 public record ResetPasswordRequest(Guid UserId, string Token, string NewPassword);
 

@@ -1,9 +1,11 @@
+using Auth.Application.Common.Models;
 using Auth.Application.Common.Options;
-using Auth.Domain.Entities;
 using Auth.Infrastructure.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using Xunit;
 
 namespace Auth.UnitTests.Services;
@@ -14,7 +16,6 @@ public class JwtServiceTests
 
     public JwtServiceTests()
     {
-        // Use default JwtOptions (empty private/public keys to test fallback in-memory key generation)
         _jwtOptions = Options.Create(new JwtOptions
         {
             Issuer = "test-issuer",
@@ -38,42 +39,26 @@ public class JwtServiceTests
     public void Should_Generate_Valid_AccessToken()
     {
         var service = new JwtService(_jwtOptions, NullLogger<JwtService>.Instance);
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            Email = "test@devspace.com",
-            DisplayName = "Test User"
-        };
-        var roles = new List<string> { "User" };
+        var user = new UserInfo(
+            Guid.NewGuid(),
+            "test@devspace.com",
+            "Test User",
+            true,
+            true,
+            new[] { "User" }
+        );
 
-        var (token, tokenId, expiresAt) = service.GenerateAccessToken(user, roles);
+        var result = service.GenerateAccessToken(user);
 
-        Assert.False(string.IsNullOrWhiteSpace(token));
-        Assert.False(string.IsNullOrWhiteSpace(tokenId));
-        Assert.True(expiresAt > DateTime.UtcNow);
+        Assert.False(string.IsNullOrWhiteSpace(result.Token));
+        Assert.True(result.ExpiresAt > DateTime.UtcNow);
 
         // Validate structure using handler
         var handler = new JwtSecurityTokenHandler();
-        var jwtToken = handler.ReadJwtToken(token);
+        var jwtToken = handler.ReadJwtToken(result.Token);
 
         Assert.Equal("test-issuer", jwtToken.Issuer);
         Assert.Equal("test-audience", jwtToken.Audiences.First());
         Assert.Equal("test-key-id", jwtToken.Header.Kid);
-    }
-
-    [Fact]
-    public void Should_Generate_Unique_RefreshToken()
-    {
-        var service = new JwtService(_jwtOptions, NullLogger<JwtService>.Instance);
-        var userId = Guid.NewGuid();
-
-        var (token1, id1, familyId1) = service.GenerateRefreshToken(userId);
-        var (token2, id2, familyId2) = service.GenerateRefreshToken(userId);
-
-        Assert.False(string.IsNullOrWhiteSpace(token1));
-        Assert.False(string.IsNullOrWhiteSpace(token2));
-        Assert.NotEqual(token1, token2);
-        Assert.NotEqual(id1, id2);
-        Assert.NotEqual(familyId1, familyId2);
     }
 }

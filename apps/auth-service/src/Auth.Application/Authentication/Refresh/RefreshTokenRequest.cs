@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Auth.Application.Common.Models;
+namespace Auth.Application.Authentication.Refresh;
 
 public record RefreshTokenRequest(string RefreshToken);
 

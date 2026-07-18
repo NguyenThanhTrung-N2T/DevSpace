@@ -1,12 +1,13 @@
-using Auth.Domain.Entities;
+using Auth.Application.Common.Models;
 using System.Security.Claims;
 
 namespace Auth.Application.Common.Interfaces;
 
+public sealed record AccessTokenResult(string Token, DateTime ExpiresAt);
+
 public interface IJwtService
 {
-    (string Token, string TokenId, DateTime ExpiresAt) GenerateAccessToken(User user, IList<string> roles);
-    (string Token, Guid TokenId, Guid FamilyId) GenerateRefreshToken(Guid userId, Guid? familyId = null);
+    AccessTokenResult GenerateAccessToken(UserInfo user);
     ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
     System.Security.Cryptography.RSA GetPublicKey();
     string GetJwksJson();

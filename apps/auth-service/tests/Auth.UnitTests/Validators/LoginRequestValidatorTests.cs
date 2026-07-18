@@ -1,4 +1,4 @@
-using Auth.Application.Common.Models;
+using Auth.Application.Authentication.Login;
 using Xunit;
 
 namespace Auth.UnitTests.Validators;

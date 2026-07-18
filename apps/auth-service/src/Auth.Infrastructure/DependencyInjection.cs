@@ -60,6 +60,12 @@ public static class DependencyInjection
         // Register JWT Service (Singleton since keys are loaded/cached in memory)
         services.AddSingleton<IJwtService, JwtService>();
 
+        // Register Specialized Identity & Token Services
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IPasswordService, PasswordService>();
+        services.AddScoped<IEmailVerificationService, EmailVerificationService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
         // Register Mock Email Service
         services.AddTransient<IEmailSender, MockEmailSender>();
 

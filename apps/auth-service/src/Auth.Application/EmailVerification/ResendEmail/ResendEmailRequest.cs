@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Auth.Application.Common.Models;
+namespace Auth.Application.EmailVerification.ResendEmail;
 
 public record ResendEmailRequest(string Email);
 

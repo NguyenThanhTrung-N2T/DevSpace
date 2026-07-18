@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Auth.Application.Common.Models;
+namespace Auth.Application.Authentication.Login;
 
 public record LoginRequest(string Email, string Password);
 

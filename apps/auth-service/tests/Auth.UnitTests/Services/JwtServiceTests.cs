@@ -43,6 +43,7 @@ public class JwtServiceTests
             Guid.NewGuid(),
             "test@devspace.com",
             "Test User",
+            null,
             true,
             true,
             new[] { "User" }

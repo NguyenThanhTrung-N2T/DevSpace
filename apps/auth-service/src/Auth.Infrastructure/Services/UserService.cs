@@ -29,6 +29,7 @@ public class UserService : IUserService
             user.Id,
             user.Email!,
             user.DisplayName,
+            user.AvatarUrl,
             user.EmailConfirmed,
             user.IsActive,
             roles.ToList()
@@ -48,6 +49,7 @@ public class UserService : IUserService
             user.Id,
             user.Email!,
             user.DisplayName,
+            user.AvatarUrl,
             user.EmailConfirmed,
             user.IsActive,
             roles.ToList()
@@ -81,6 +83,7 @@ public class UserService : IUserService
             user.Id,
             user.Email,
             user.DisplayName,
+            user.AvatarUrl,
             user.EmailConfirmed,
             user.IsActive,
             new List<string> { "User" }

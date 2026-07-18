@@ -1,3 +1,4 @@
+using Auth.Application.Authentication.GetMe;
 using Auth.Application.Authentication.Login;
 using Auth.Application.Authentication.Logout;
 using Auth.Application.Authentication.Refresh;
@@ -20,19 +21,22 @@ public class AuthenticationController : ControllerBase
     private readonly RefreshTokenHandler _refreshHandler;
     private readonly LogoutHandler _logoutHandler;
     private readonly RevokeAllHandler _revokeAllHandler;
+    private readonly GetMeHandler _getMeHandler;
 
     public AuthenticationController(
         RegisterHandler registerHandler,
         LoginHandler loginHandler,
         RefreshTokenHandler refreshHandler,
         LogoutHandler logoutHandler,
-        RevokeAllHandler revokeAllHandler)
+        RevokeAllHandler revokeAllHandler,
+        GetMeHandler getMeHandler)
     {
         _registerHandler = registerHandler;
         _loginHandler = loginHandler;
         _refreshHandler = refreshHandler;
         _logoutHandler = logoutHandler;
         _revokeAllHandler = revokeAllHandler;
+        _getMeHandler = getMeHandler;
     }
 
     [HttpPost("register")]
@@ -84,5 +88,19 @@ public class AuthenticationController : ControllerBase
 
         await _revokeAllHandler.HandleAsync(userGuid, cancellationToken);
         return Ok(new { Message = "All active sessions revoked successfully." });
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<UserDto>> GetMe(CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _getMeHandler.HandleAsync(userGuid, cancellationToken);
+        return Ok(result);
     }
 }

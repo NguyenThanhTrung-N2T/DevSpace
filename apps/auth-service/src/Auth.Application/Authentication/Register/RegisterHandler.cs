@@ -1,6 +1,7 @@
 using Auth.Application.Common.Exceptions;
 using Auth.Application.Common.Interfaces;
 using Auth.Application.Common.Options;
+using FluentValidation;
 using Microsoft.Extensions.Options;
 using System.Net;
 
@@ -12,21 +13,30 @@ public class RegisterHandler
     private readonly IEmailVerificationService _emailVerificationService;
     private readonly IEmailSender _emailSender;
     private readonly SecurityOptions _securityOptions;
+    private readonly IValidator<RegisterRequest> _validator;
 
     public RegisterHandler(
         IUserService userService, 
         IEmailVerificationService emailVerificationService, 
         IEmailSender emailSender,
-        IOptions<SecurityOptions> securityOptions)
+        IOptions<SecurityOptions> securityOptions,
+        IValidator<RegisterRequest> validator)
     {
         _userService = userService;
         _emailVerificationService = emailVerificationService;
         _emailSender = emailSender;
         _securityOptions = securityOptions.Value;
+        _validator = validator;
     }
 
     public async Task HandleAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
+        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            throw new Auth.Application.Common.Exceptions.ValidationException(validationResult.Errors);
+        }
+
         var existingUser = await _userService.FindByEmailAsync(request.Email, cancellationToken);
         if (existingUser != null)
         {

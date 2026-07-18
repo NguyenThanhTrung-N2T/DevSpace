@@ -39,7 +39,7 @@ public class RefreshTokenService : IRefreshTokenService
         }
 
         var roles = await _userManager.GetRolesAsync(user);
-        var userInfo = new UserInfo(user.Id, user.Email!, user.DisplayName, user.EmailConfirmed, user.IsActive, roles.ToList());
+        var userInfo = new UserInfo(user.Id, user.Email!, user.DisplayName, user.AvatarUrl, user.EmailConfirmed, user.IsActive, roles.ToList());
 
         var rawToken = GenerateRawToken();
         var hashedToken = HashToken(rawToken);
@@ -107,7 +107,7 @@ public class RefreshTokenService : IRefreshTokenService
         }
 
         var roles = await _userManager.GetRolesAsync(user);
-        var userInfo = new UserInfo(user.Id, user.Email!, user.DisplayName, user.EmailConfirmed, user.IsActive, roles.ToList());
+        var userInfo = new UserInfo(user.Id, user.Email!, user.DisplayName, user.AvatarUrl, user.EmailConfirmed, user.IsActive, roles.ToList());
 
         // Revoke the old token
         storedToken.IsRevoked = true;

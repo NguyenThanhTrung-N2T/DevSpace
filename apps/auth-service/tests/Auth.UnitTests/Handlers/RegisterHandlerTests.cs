@@ -3,7 +3,10 @@ using Auth.Application.Common.Exceptions;
 using Auth.Application.Common.Interfaces;
 using Auth.Application.Common.Models;
 using Auth.Application.Common.Options;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.Options;
+using ValidationException = Auth.Application.Common.Exceptions.ValidationException;
 using NSubstitute;
 using System;
 using System.Threading;
@@ -18,6 +21,7 @@ public class RegisterHandlerTests
     private readonly IEmailVerificationService _emailVerificationService = Substitute.For<IEmailVerificationService>();
     private readonly IEmailSender _emailSender = Substitute.For<IEmailSender>();
     private readonly IOptions<SecurityOptions> _securityOptions;
+    private readonly IValidator<RegisterRequest> _validator = Substitute.For<IValidator<RegisterRequest>>();
     private readonly RegisterHandler _handler;
 
     public RegisterHandlerTests()
@@ -27,7 +31,10 @@ public class RegisterHandlerTests
             PublicOrigin = "https://localhost:5001"
         });
 
-        _handler = new RegisterHandler(_userService, _emailVerificationService, _emailSender, _securityOptions);
+        _validator.ValidateAsync(Arg.Any<RegisterRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new ValidationResult()); // Default valid
+
+        _handler = new RegisterHandler(_userService, _emailVerificationService, _emailSender, _securityOptions, _validator);
     }
 
     [Fact]
@@ -36,7 +43,7 @@ public class RegisterHandlerTests
         // Arrange
         var request = new RegisterRequest("newuser@devspace.com", "Password123!", "New User");
         var userId = Guid.NewGuid();
-        var userInfo = new UserInfo(userId, "newuser@devspace.com", "New User", false, true, new[] { "User" });
+        var userInfo = new UserInfo(userId, "newuser@devspace.com", "New User", null, false, true, new[] { "User" });
 
         _userService.FindByEmailAsync(request.Email, Arg.Any<CancellationToken>())
             .Returns((UserInfo?)null);
@@ -64,7 +71,7 @@ public class RegisterHandlerTests
     {
         // Arrange
         var request = new RegisterRequest("existing@devspace.com", "Password123!", "Existing User");
-        var userInfo = new UserInfo(Guid.NewGuid(), "existing@devspace.com", "Existing User", true, true, new[] { "User" });
+        var userInfo = new UserInfo(Guid.NewGuid(), "existing@devspace.com", "Existing User", null, true, true, new[] { "User" });
 
         _userService.FindByEmailAsync(request.Email, Arg.Any<CancellationToken>())
             .Returns(userInfo);

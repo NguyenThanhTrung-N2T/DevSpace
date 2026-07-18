@@ -22,6 +22,11 @@ public class ConfigureIdentityOptions : IConfigureOptions<IdentityOptions>
         options.Password.RequireDigit = _securityOptions.PasswordRequireDigit;
         options.Password.RequireNonAlphanumeric = _securityOptions.PasswordRequireNonAlphanumeric;
 
+        // Lockout settings
+        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+
         // Sign-in settings
         options.SignIn.RequireConfirmedEmail = true;
     }

@@ -1,5 +1,7 @@
+using Auth.Application.Common.Exceptions;
 using Auth.Application.Common.Interfaces;
 using Auth.Application.Common.Options;
+using FluentValidation;
 using Microsoft.Extensions.Options;
 using System.Net;
 
@@ -11,21 +13,30 @@ public class ForgotPasswordHandler
     private readonly IPasswordService _passwordService;
     private readonly IEmailSender _emailSender;
     private readonly SecurityOptions _securityOptions;
+    private readonly IValidator<ForgotPasswordRequest> _validator;
 
     public ForgotPasswordHandler(
         IUserService userService, 
         IPasswordService passwordService, 
         IEmailSender emailSender,
-        IOptions<SecurityOptions> securityOptions)
+        IOptions<SecurityOptions> securityOptions,
+        IValidator<ForgotPasswordRequest> validator)
     {
         _userService = userService;
         _passwordService = passwordService;
         _emailSender = emailSender;
         _securityOptions = securityOptions.Value;
+        _validator = validator;
     }
 
     public async Task HandleAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
     {
+        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            throw new Auth.Application.Common.Exceptions.ValidationException(validationResult.Errors);
+        }
+
         var user = await _userService.FindByEmailAsync(request.Email, cancellationToken);
         if (user != null && user.IsActive)
         {

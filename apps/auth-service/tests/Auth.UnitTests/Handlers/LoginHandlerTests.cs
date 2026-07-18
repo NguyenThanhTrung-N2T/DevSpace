@@ -2,6 +2,9 @@ using Auth.Application.Authentication.Login;
 using Auth.Application.Common.Exceptions;
 using Auth.Application.Common.Interfaces;
 using Auth.Application.Common.Models;
+using FluentValidation;
+using FluentValidation.Results;
+using ValidationException = Auth.Application.Common.Exceptions.ValidationException;
 using NSubstitute;
 using System;
 using System.Collections.Generic;
@@ -17,11 +20,15 @@ public class LoginHandlerTests
     private readonly IPasswordService _passwordService = Substitute.For<IPasswordService>();
     private readonly IJwtService _jwtService = Substitute.For<IJwtService>();
     private readonly IRefreshTokenService _refreshTokenService = Substitute.For<IRefreshTokenService>();
+    private readonly IValidator<LoginRequest> _validator = Substitute.For<IValidator<LoginRequest>>();
     private readonly LoginHandler _handler;
 
     public LoginHandlerTests()
     {
-        _handler = new LoginHandler(_userService, _passwordService, _jwtService, _refreshTokenService);
+        _validator.ValidateAsync(Arg.Any<LoginRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new ValidationResult()); // Default is valid
+
+        _handler = new LoginHandler(_userService, _passwordService, _jwtService, _refreshTokenService, _validator);
     }
 
     [Fact]
@@ -30,7 +37,7 @@ public class LoginHandlerTests
         // Arrange
         var request = new LoginRequest("user@devspace.com", "Password123!");
         var userId = Guid.NewGuid();
-        var userInfo = new UserInfo(userId, "user@devspace.com", "User Name", true, true, new List<string> { "User" });
+        var userInfo = new UserInfo(userId, "user@devspace.com", "User Name", null, true, true, new List<string> { "User" });
 
         _userService.FindByEmailAsync(request.Email, Arg.Any<CancellationToken>())
             .Returns(userInfo);
@@ -58,6 +65,20 @@ public class LoginHandlerTests
     }
 
     [Fact]
+    public async Task Should_Throw_ValidationException_When_Request_Is_Invalid()
+    {
+        // Arrange
+        var request = new LoginRequest("", "");
+        var validationFailure = new ValidationFailure("Email", "Email is required.");
+        _validator.ValidateAsync(request, Arg.Any<CancellationToken>())
+            .Returns(new ValidationResult(new[] { validationFailure }));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() => 
+            _handler.HandleAsync(request, "127.0.0.1", "userAgent"));
+    }
+
+    [Fact]
     public async Task Should_Throw_UnauthorizedException_And_Run_DummyCheck_When_User_Not_Found()
     {
         // Arrange
@@ -80,7 +101,7 @@ public class LoginHandlerTests
         // Arrange
         var request = new LoginRequest("user@devspace.com", "WrongPassword!");
         var userId = Guid.NewGuid();
-        var userInfo = new UserInfo(userId, "user@devspace.com", "User Name", true, true, new List<string> { "User" });
+        var userInfo = new UserInfo(userId, "user@devspace.com", "User Name", null, true, true, new List<string> { "User" });
 
         _userService.FindByEmailAsync(request.Email, Arg.Any<CancellationToken>())
             .Returns(userInfo);
